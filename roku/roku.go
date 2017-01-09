@@ -19,6 +19,7 @@ const (
 var (
 	rokuUSN    = regexp.MustCompile(`uuid:roku:ecp:([\w\d]{12})`)
 	searchTime = (5 * time.Second)
+	rokuIP     = ""
 )
 
 //Get the roku ip.
@@ -33,7 +34,7 @@ func GetRokuIp(searchDuration time.Duration) (string, error) {
 	}
 
 	//Build the sender
-	replaceMePlaceHolder := "/replacemewithstar"
+	replaceMePlaceHolder := "/CHANGEME"
 	broadcastAddr, _ := net.ResolveUDPAddr("udp", BroadcastIP+":"+strconv.Itoa(Port))
 	request, _ := http.NewRequest("M-SEARCH", "http://"+broadcastAddr.String()+replaceMePlaceHolder, nil)
 	setSSDPHeaders(*request)
@@ -70,6 +71,7 @@ func GetRokuIp(searchDuration time.Duration) (string, error) {
 		headers := response.Header
 		if rokuUSN.MatchString(headers.Get("usn")) {
 			fmt.Println("Got Roku IP.")
+			rokuIP = headers.Get("Location")
 			return headers.Get("Location"), nil
 		}
 		return "", nil
@@ -77,9 +79,6 @@ func GetRokuIp(searchDuration time.Duration) (string, error) {
 	return "", nil
 }
 
-func setupListener() {
-
-}
 func setSSDPHeaders(req http.Request) {
 	headers := req.Header
 	headers.Set("User-Agent", "")
