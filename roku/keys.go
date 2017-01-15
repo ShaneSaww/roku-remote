@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 type Command struct {
@@ -11,6 +12,12 @@ type Command struct {
 	key        string
 	url        string
 	httpClient *http.Client
+}
+
+type HttpResponse struct {
+	count    int
+	response *http.Response
+	err      error
 }
 
 func Keypress(key string, count int) error {
@@ -22,11 +29,12 @@ func Keypress(key string, count int) error {
 	if err != nil {
 		return err
 	}
-	command.do(req)
-	if err != nil {
-		return nil
+	reqs := command.do(req)
+	for _, req := range reqs {
+		if req.err != nil {
+			return fmt.Errorf("Not all parts called")
+		}
 	}
-	fmt.Printf(command.url)
 	return nil
 }
 
@@ -39,23 +47,34 @@ func (c *Command) buildURL() {
 	return
 }
 
-func (c *Command) do(req *http.Request) (*http.Response, error) {
-	var lastResp *http.Response
-	var sendErr error
-	sendErr = nil
+func (c *Command) do(req *http.Request) []*HttpResponse {
+	ch := make(chan *HttpResponse)
+	responses := []*HttpResponse{}
 	for i := 0; i < c.count; i++ {
 		go func(i int) {
 			resp, err := c.httpClient.Do(req)
-			if err != nil {
-				sendErr = err
-			}
-			if resp.StatusCode != 200 {
-				sendErr = fmt.Errorf("Got something other than 200")
-				lastResp = resp
+			ch <- &HttpResponse{i, resp, err}
+			if err != nil && resp != nil && resp.StatusCode == http.StatusOK {
+				resp.Body.Close()
 			}
 		}(i)
 	}
-	return lastResp, sendErr
+
+	for {
+		select {
+		case r := <-ch:
+			if r.err != nil {
+				fmt.Printf("Had trouble the %v request, for key %v\n", r.count, c.key)
+			}
+			responses = append(responses, r)
+			if len(responses) == c.count {
+				return responses
+			}
+		case <-time.After(50 * time.Millisecond):
+			fmt.Printf(".")
+		}
+	}
+	return responses
 }
 
 func (c *Command) buildReq() (*http.Request, error) {
