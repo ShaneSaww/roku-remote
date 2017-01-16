@@ -23,7 +23,8 @@ func Handler() *mux.Router {
 }
 
 func serveButton(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("into serve Post for %+v\n", r.URL)
+
+	fmt.Printf("into serve Post for %+v\n", r.URL.Path)
 	urlPath := r.URL.EscapedPath()
 	kC := 3
 	if urlPath == "/enter" {
