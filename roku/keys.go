@@ -31,6 +31,7 @@ func Keypress(key string, count int) error {
 	}
 	reqs := command.do(req)
 	for _, req := range reqs {
+		time.Sleep(1 * time.Second)
 		if req.err != nil {
 			return fmt.Errorf("Not all parts called")
 		}

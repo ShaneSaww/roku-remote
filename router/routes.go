@@ -14,8 +14,8 @@ const (
 	Home       = "home"
 )
 
-func API() *mux.Router {
-	m := mux.NewRouter().StrictSlash(true)
+func API(r *mux.Router) *mux.Router {
+	m := r.StrictSlash(true)
 	m.Path(fmt.Sprintf("/%s", VolumeDown)).Methods("GET").Name(VolumeDown)
 	m.Path(fmt.Sprintf("/%s", VolumeMute)).Methods("GET").Name(VolumeMute)
 	m.Path(fmt.Sprintf("/%s", VolumeUp)).Methods("GET").Name(VolumeUp)

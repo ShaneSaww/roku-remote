@@ -8,14 +8,12 @@ import (
 	"github.com/ShaneSaww/roku-remote/roku"
 	"github.com/ShaneSaww/roku-remote/router"
 	"github.com/gorilla/mux"
-	newrelic "github.com/newrelic/go-agent"
 )
 
-func Handler(nrApp newrelic.Application) *mux.Router {
-	m := router.API()
+func Handler(r *mux.Router) *mux.Router {
+	m := router.API(r)
 	handler := http.HandlerFunc(serveButton)
-	i := mid.InstrumentedMiddleware{App: nrApp}
-	midChain := mid.NewChain(mid.Logging, mid.ErrorCatching, i.NRHandler).Then(handler)
+	midChain := mid.NewChain(mid.Logging, mid.ErrorCatching).Then(handler)
 	m.Get(router.VolumeDown).Handler(midChain)
 	m.Get(router.VolumeMute).Handler(midChain)
 	m.Get(router.VolumeUp).Handler(midChain)
@@ -30,7 +28,7 @@ func serveButton(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("into serve Post for %+v\n", r.URL.Path)
 	urlPath := r.URL.EscapedPath()
 	kC := 1
-	if urlPath == "/volumedown" || urlPath == "/volumeup" {
+	if urlPath == "/api/volumedown" || urlPath == "/api/volumeup" {
 		kC = 3
 	}
 	err := roku.Keypress(urlPath, kC)

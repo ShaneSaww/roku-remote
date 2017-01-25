@@ -10,7 +10,9 @@ import (
 
 	"github.com/ShaneSaww/roku-remote/api"
 	"github.com/ShaneSaww/roku-remote/roku"
+	"github.com/gorilla/mux"
 	newrelic "github.com/newrelic/go-agent"
+	nrgorilla "github.com/newrelic/go-agent/_integrations/nrgorilla/v1"
 )
 
 var (
@@ -34,11 +36,12 @@ func main() {
 	}
 	fmt.Println(rokuIp)
 
-	m := http.NewServeMux()
-	m.Handle("/api/", http.StripPrefix("/api", api.Handler(nrApp)))
+	r := mux.NewRouter()
+	aR := r.PathPrefix("/api").Subrouter()
+	api.Handler(aR)
 
 	log.Print("Listening on ", httpAddr)
-	httpErr := http.ListenAndServe(httpAddr, m)
+	httpErr := http.ListenAndServe(httpAddr, nrgorilla.InstrumentRoutes(r, nrApp))
 	if httpErr != nil {
 		log.Fatal("ListenAndServe:", httpErr)
 	}
